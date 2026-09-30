@@ -54,24 +54,50 @@ Run `doctor` to inspect the installed version's machine-readable capabilities.
 
 ## Quick start
 
-**Requirements:** Python 3.9+. An already configured Codex or Claude Code is needed to use the skill; the CLI works independently.
+**Requirements:** Python 3.9+ and a configured Codex or Claude Code. The five-step status below was checked on **2026-09-30** using a fresh GitHub clone and an installed Codex skill.
 
-### 1. Get the project
+| Step | Verified outcome |
+| --- | --- |
+| 1. Install the skill | Passed: installed to Codex and ran its bundled tools outside the checkout |
+| 2. Test a strategy | Passed: example strategy schema accepted; unsupported formats remain rejected |
+| 3. Backtest | Passed: synthetic CSV produced metrics, fills, equity, and provenance |
+| 4. Evolve with your AI | Manual exploration verified: this Codex session proposed and evaluated three candidates; none qualified |
+| 5. Run a paper account | **Unavailable:** no paper account command, feed worker, or monitoring website exists yet |
+
+**The full five-step workflow is not supported by this release.** You can install, backtest, and explore parameters with your AI. Forward simulation still needs implementation. See the [verification report](docs/readme-workflow-verification-20260930.md).
+
+### 1. Install the skill
 
 ```bash
 git clone https://github.com/EthanAlgoX/QuantEvo-Skill.git
 cd QuantEvo-Skill
-python3 skills/quantevo/scripts/quantevo.py doctor
+python3 scripts/install_skill.py --client codex
+
+skill_dir="${CODEX_HOME:-$HOME/.codex}/skills/quantevo"
+python3 "$skill_dir/scripts/quantevo.py" doctor
 ```
 
-### 2. Run a sample backtest
+For Claude Code, use `--client claude` and set `skill_dir="$HOME/.claude/skills/quantevo"`. An existing skill is preserved and installation stops; inspect its version with `doctor` before reusing it. A custom destination can be supplied with `--destination /absolute/path/to/skills`.
 
-The following series is **synthetic**, generated solely to verify installation. Run these commands from the repository root with unused output paths.
+Reload skills in your client if needed. In an already running conversation, explicitly ask the AI to read the installed `SKILL.md` using its absolute path; a successful file copy alone does not prove automatic skill discovery.
+
+### 2. Prepare and test a strategy
+
+Use the included SMA example first:
 
 ```bash
+python3 -m json.tool examples/sma-cross.json
 python3 scripts/make_demo.py --output demo.synthetic.csv
+```
 
-python3 skills/quantevo/scripts/quantevo.py backtest \
+`json.tool` checks JSON syntax. The backtest engine also validates the strategy schema, parameter ranges, and OHLCV data before evaluation. The generated daily series is **synthetic**, used only to test the workflow; it is not real market evidence.
+
+Run the following examples from the repository root with unused output paths. The `skill_dir` variable belongs to the same shell session; set it again in a new terminal.
+
+### 3. Run the installed skill's backtest
+
+```bash
+python3 "$skill_dir/scripts/quantevo.py" backtest \
   --strategy examples/sma-cross.json \
   --data demo.synthetic.csv \
   --initial-cash 10000 \
@@ -81,27 +107,21 @@ python3 skills/quantevo/scripts/quantevo.py backtest \
   --output demo.backtest.json
 ```
 
-Inspect `demo.backtest.json` for the settings, metrics, fills, equity curve, and provenance. Existing output files are preserved; choose new paths when rerunning.
+Inspect `demo.backtest.json` for settings, metrics, fills, equity, and hashes. Existing output files are preserved; choose new paths when rerunning. The installed helper is self-contained; from another directory, supply absolute input/output paths.
 
-### 3. Install the skill
+### 4. Ask Codex or Claude Code to explore parameters
 
-Choose your client, or install for both:
+Provide the installed skill's **absolute path**, your strategy, and your CSV to your existing AI conversation:
 
-```bash
-python3 scripts/install_skill.py --client codex
-python3 scripts/install_skill.py --client claude
-```
+> Read the installed QuantEvo SKILL.md. On this synthetic example, prepare chronological training and validation windows and leave the final window uninspected. Fix cash at 10,000, fees at 10 bps, slippage at 5 bps, and annualization at 365. Propose up to three SMA parameter candidates with written hypotheses, call the installed evaluator, and save the baseline, proposals, and every result. Define the selection criteria before running candidates. Report no improvement if none qualifies. Do not call a historical backtest a forward simulation.
 
-| Client | Default installation directory |
-| --- | --- |
-| Codex | `~/.codex/skills/quantevo` (honors `CODEX_HOME`) |
-| Claude Code | `~/.claude/skills/quantevo` |
+The **host AI** proposes changes and orchestrates tool calls. QuantEvo does not call another model API and has no `evolve` command. This is manual parameter research, with window portfolios reset and warmup included. Persistent budgets, automatic selection/finalization, and protected holdouts are not implemented.
 
-An existing skill is preserved and installation stops. Use `--destination /absolute/path/to/skills` to choose another skills parent directory. Reload the skill in your client after installation.
+During our check, Codex evaluated three hypotheses on identical windows and found no qualifying improvement. The result and limitations are documented in the verification report. This confirms the manual tool workflow, not strategy effectiveness.
 
-Then ask your AI tool:
+### 5. Forward simulation — not available yet
 
-> Use QuantEvo to evaluate my SMA strategy against this daily CSV. Report fees, Sharpe, maximum drawdown, and trading activity. Explain the evaluation settings and suggest a testable parameter change.
+There is no supported command to create or start a paper account in this release. Stop here: a backtest equity curve cannot substitute for forward simulation. Account persistence, feed ingestion, a background worker, and the local website are roadmap items. See the [paper contract](skills/quantevo/references/paper.md).
 
 ### Optional: install the CLI
 

@@ -54,24 +54,50 @@ QuantEvo Skill 是面向 **Codex 和 Claude Code** 的本地策略研究技能�
 
 ## 快速开始
 
-**环境要求：** Python 3.9+。使用 skill 需要已配置的 Codex 或 Claude Code；命令行工具可独立运行。
+**环境要求：** Python 3.9+，以及已配置的 Codex 或 Claude Code。下表流程已于 **2026-09-30** 通过从 GitHub 重新克隆、实际安装 Codex skill 的方式核查。
 
-### 1. 获取项目
+| 步骤 | 实测结果 |
+| --- | --- |
+| 1. 安装 skill | 通过：已安装到 Codex，安装后的工具可在仓库外运行 |
+| 2. 测试策略 | 通过：示例通过策略格式校验；不支持的格式仍会被拒绝 |
+| 3. 回测 | 通过：合成 CSV 生成了指标、成交、净值和来源指纹 |
+| 4. 用自己的 AI 自进化 | 已验证手动探索：当前 Codex 提出并评测了三个候选，均未通过筛选 |
+| 5. 模拟运行 | **暂不可用：** 尚无模拟账户命令、行情后台或监控网站 |
+
+**当前版本无法完成完整的五步流程。** 可以安装、回测，并使用自己的 AI 探索参数；前向模拟仍需实现。详见[流程验证报告](docs/readme-workflow-verification-20260930.md)。
+
+### 1. 安装 skill
 
 ```bash
 git clone https://github.com/EthanAlgoX/QuantEvo-Skill.git
 cd QuantEvo-Skill
-python3 skills/quantevo/scripts/quantevo.py doctor
+python3 scripts/install_skill.py --client codex
+
+skill_dir="${CODEX_HOME:-$HOME/.codex}/skills/quantevo"
+python3 "$skill_dir/scripts/quantevo.py" doctor
 ```
 
-### 2. 运行示例回测
+Claude Code 用户改用 `--client claude`，并设置 `skill_dir="$HOME/.claude/skills/quantevo"`。已有同名技能会保留并停止安装；复用前请用 `doctor` 检查版本。可用 `--destination /absolute/path/to/skills` 自定义技能父目录。
 
-以下行情为**合成数据**，仅用于验证安装。请在仓库根目录执行，并使用尚不存在的输出路径。
+必要时在客户端重新加载技能。对已经打开的对话，可以明确要求 AI 通过绝对路径读取安装后的 `SKILL.md`；仅复制文件成功，不代表已经验证客户端能自动发现技能。
+
+### 2. 准备并测试策略
+
+先使用内置 SMA 示例：
 
 ```bash
+python3 -m json.tool examples/sma-cross.json
 python3 scripts/make_demo.py --output demo.synthetic.csv
+```
 
-python3 skills/quantevo/scripts/quantevo.py backtest \
+`json.tool` 检查 JSON 语法；回测引擎还会在计算前校验策略格式、参数范围与 OHLCV 数据。生成的日线是**合成数据**，仅用于验证流程，不是实际市场证据。
+
+以下示例请在仓库根目录执行，并使用尚不存在的输出路径。`skill_dir` 变量属于当前终端会话，新开终端后需要重新设置。
+
+### 3. 通过安装后的 skill 做回测
+
+```bash
+python3 "$skill_dir/scripts/quantevo.py" backtest \
   --strategy examples/sma-cross.json \
   --data demo.synthetic.csv \
   --initial-cash 10000 \
@@ -81,27 +107,21 @@ python3 skills/quantevo/scripts/quantevo.py backtest \
   --output demo.backtest.json
 ```
 
-打开 `demo.backtest.json`，查看评测设置、指标、成交、净值曲线与来源指纹。已有输出文件会保留；重新运行时请改用新路径。
+打开 `demo.backtest.json` 查看设置、指标、成交、净值与哈希。已有结果文件会保留，重复运行请使用新路径。安装后的工具自带运行代码；在其他目录使用时，传入绝对输入与输出路径即可。
 
-### 3. 安装技能
+### 4. 让 Codex 或 Claude Code 探索参数
 
-选择对应客户端，也可以安装到两个客户端：
+在现有 AI 对话中提供安装后的 skill **绝对路径**、策略文件和 CSV，并提出任务：
 
-```bash
-python3 scripts/install_skill.py --client codex
-python3 scripts/install_skill.py --client claude
-```
+> 读取安装后的 QuantEvo SKILL.md。对这个合成示例按时间准备训练与验证数据，先不要查看最终区间。固定初始资金 10,000、手续费 10 bps、滑点 5 bps、年化参数 365。先定义筛选条件，再提出最多三个带书面假设的 SMA 参数候选，调用安装后的评测工具，保存基线、提案及每次结果。没有合格改进就如实报告。不要把历史回测当作前向模拟。
 
-| 客户端 | 默认安装目录 |
-| --- | --- |
-| Codex | `~/.codex/skills/quantevo`，支持 `CODEX_HOME` |
-| Claude Code | `~/.claude/skills/quantevo` |
+**宿主 AI** 负责提出修改并组织工具调用。QuantEvo 不会再调用其他模型 API，也没有 `evolve` 命令。这是手动参数研究，各数据分段会重置账户，指标包含预热。持久化预算、自动选择与最终检查、隔离留出数据等能力尚未实现。
 
-已有同名技能会保留并停止安装。可用 `--destination /absolute/path/to/skills` 指定其他技能父目录。安装后在客户端重新加载技能。
+本次核查中，Codex 对相同区间评测了三个假设，没有找到合格改进；结果与限制已记入验证报告。这验证的是手动研究工具流程，不代表策略有效性。
 
-然后向 AI 工具提出任务：
+### 5. 前向模拟——当前不可用
 
-> 使用 QuantEvo 评测我的 SMA 策略和这份日线 CSV。报告手续费、夏普率、最大回撤和交易活动，解释评测设置，并提出一个可检验的参数修改假设。
+当前版本没有可用的模拟账户创建或启动命令，流程在这里停止。历史回测净值不能替代前向模拟。账户持久化、行情接入、后台进程和本地网站仍是路线图中的功能，详见[模拟运行合同](skills/quantevo/references/paper.md)。
 
 ### 可选：安装命令行工具
 

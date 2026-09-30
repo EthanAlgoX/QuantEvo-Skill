@@ -1,0 +1,154 @@
+{
+  "strategy_validation": "passed",
+  "baseline_and_candidate_evaluations": {
+    "baseline": {
+      "train": {
+        "total_return": 0.2246660981535511,
+        "sharpe": 4.650498781671171,
+        "max_drawdown": -0.05756497222849832,
+        "fees_paid": 27.550786697363165,
+        "fill_count": 5,
+        "closed_trade_count": 2
+      },
+      "validation": {
+        "total_return": 0.09790617825541004,
+        "sharpe": 8.518036460471738,
+        "max_drawdown": -0.0036457892953176696,
+        "fees_paid": 4.9950049950049955,
+        "fill_count": 1,
+        "closed_trade_count": 0
+      }
+    },
+    "faster-response": {
+      "train": {
+        "total_return": 0.272634737410818,
+        "sharpe": 5.909402968285583,
+        "max_drawdown": -0.04101648042479766,
+        "fees_paid": 28.450280610300986,
+        "fill_count": 5,
+        "closed_trade_count": 2
+      },
+      "validation": {
+        "total_return": 0.09409577006241743,
+        "sharpe": 8.139092370947479,
+        "max_drawdown": -0.003961600370188001,
+        "fees_paid": 4.9950049950049955,
+        "fill_count": 1,
+        "closed_trade_count": 0
+      },
+      "qualifies": false
+    },
+    "smoother-trend": {
+      "train": {
+        "total_return": 0.06342450933365407,
+        "sharpe": 1.725800488312236,
+        "max_drawdown": -0.06275262062218934,
+        "fees_paid": 25.44084426347981,
+        "fill_count": 5,
+        "closed_trade_count": 2
+      },
+      "validation": {
+        "total_return": 0.05521860666427081,
+        "sharpe": 6.4284836984452385,
+        "max_drawdown": -0.003521332507755215,
+        "fees_paid": 4.995004995004996,
+        "fill_count": 1,
+        "closed_trade_count": 0
+      },
+      "qualifies": false
+    },
+    "balanced-response": {
+      "train": {
+        "total_return": 0.23273132635308746,
+        "sharpe": 4.880822892145333,
+        "max_drawdown": -0.05500509611048343,
+        "fees_paid": 27.75374809504885,
+        "fill_count": 5,
+        "closed_trade_count": 2
+      },
+      "validation": {
+        "total_return": 0.09463982459259856,
+        "sharpe": 8.177564600256,
+        "max_drawdown": -0.0036366064001491782,
+        "fees_paid": 4.995004995004996,
+        "fill_count": 1,
+        "closed_trade_count": 0
+      },
+      "qualifies": false
+    }
+  },
+  "selection": {
+    "selected": null,
+    "strategy_sha256": null,
+    "basis": "validation only",
+    "result": "no qualifying improvement"
+  },
+  "final": {},
+  "paper": "unsupported: no forward worker or account commands",
+  "tested_commit": "e27079dc5a97ec5a38e4c4da5dbf19ce03008651",
+  "fixture": "scripts/make_demo.py: 400 synthetic daily OHLCV bars",
+  "contract": {
+    "source": "synthetic installation fixture",
+    "researcher": "Codex in the current desktop session",
+    "mode": "manual host-agent parameter exploration",
+    "budget": 3,
+    "initial_cash": 10000,
+    "fee_bps": 10,
+    "slippage_bps": 5,
+    "periods_per_year": 365,
+    "objective": "validation Sharpe",
+    "minimum_improvement": 0.05,
+    "max_drawdown": 0.15,
+    "min_closed_trades": 1,
+    "selection": "highest qualifying validation Sharpe",
+    "windows": {
+      "train": [
+        0,
+        240
+      ],
+      "validation": [
+        240,
+        320
+      ],
+      "final": [
+        320,
+        400
+      ]
+    },
+    "limitations": [
+      "warmup included",
+      "window portfolios reset",
+      "synthetic data",
+      "not an inaccessible holdout"
+    ]
+  },
+  "proposals": [
+    {
+      "researcher": "Codex",
+      "hypothesis": "Reduce crossover lag to capture shorter swings; validate whether turnover costs outweigh earlier entry.",
+      "changes": {
+        "fast": 5,
+        "slow": 20
+      },
+      "parent": "baseline"
+    },
+    {
+      "researcher": "Codex",
+      "hypothesis": "Lengthen the slow average to filter short oscillations and test whether fewer reversals improve cost-adjusted results.",
+      "changes": {
+        "fast": 10,
+        "slow": 45
+      },
+      "parent": "baseline"
+    },
+    {
+      "researcher": "Codex",
+      "hypothesis": "Moderately shorten both windows to reduce lag without the faster proposal's sensitivity.",
+      "changes": {
+        "fast": 8,
+        "slow": 25
+      },
+      "parent": "baseline"
+    }
+  ]
+}
