@@ -1,0 +1,7 @@
+{
+  "schema": "quantevo.strategy.v1",
+  "kind": "sma_cross",
+  "fast": 10,
+  "slow": 30,
+  "position_weight": 0.5
+}
