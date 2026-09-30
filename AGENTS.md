@@ -15,5 +15,7 @@ Claude Code. The current project name is provisional.
 - Keep personal strategies, credentials, accounts and server configuration out
   of distributable files. Synthetic fixtures must be labeled.
 - Run `python3 -m unittest discover -s tests -v` after runtime changes.
-- This foundation has no order placement, unattended research or live feed.
-  Do not advertise a planned command as executable.
+- The runtime supports CSV paper accounts, background workers and a read-only
+  loopback monitor. No exchange orders, unattended AI research or built-in
+  market API feeds. Producers supply completed, append-only CSV bars.
+- Never present demo synthetic feeds as real market observations.

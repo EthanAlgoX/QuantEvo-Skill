@@ -10,19 +10,19 @@ Backtest · Evolve · Paper trade
 
 ![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square)
 ![Codex and Claude Code](https://img.shields.io/badge/Works_with-Codex_%26_Claude_Code-24292F?style=flat-square)
-![Foundation v0.0.1](https://img.shields.io/badge/Stage-Foundation_v0.0.1-D97706?style=flat-square)
+![Paper ready v0.1.0](https://img.shields.io/badge/Release-v0.1.0-18715B?style=flat-square)
 
 [Quick start](#quick-start) · [What's available](#whats-available) · [Roadmap](#roadmap) · [Documentation](#documentation)
 
 </div>
 
-![QuantEvo workflow: backtesting is available; evolution and forward paper trading are planned.](assets/workflow.svg)
+![QuantEvo workflow: backtest, AI-assisted research, and persistent paper monitoring.](assets/workflow.svg)
 
 QuantEvo Skill is a local strategy research skill for **Codex and Claude Code**. Use your existing AI setup to understand a strategy, run deterministic evaluations, and develop testable optimization ideas. There is no additional LLM API configuration inside QuantEvo.
 
 The long-term workflow connects reproducible backtests, iterative strategy evolution, and persistent paper accounts with a local monitoring dashboard.
 
-> **Current release:** single-asset SMA crossover backtesting on local CSV data. Persistent evolution, forward paper trading, and the dashboard are planned. The foundation does not place real orders.
+> **v0.1.0:** backtest single-asset SMA strategies, explore candidates with your AI, and run persistent CSV paper accounts with a bilingual local dashboard. No extra LLM API or Node.js setup is required. No real orders are placed.
 
 ## Why QuantEvo?
 
@@ -47,8 +47,8 @@ Local execution does not mean local model inference: your AI tool's own settings
 | Costs and evaluation evidence | ✅ Available | Fees, slippage, Sharpe, drawdown, fills, equity, input hashes |
 | AI-assisted parameter exploration | 🧪 Manual | Host AI proposes changes; users prepare data windows and save separate results |
 | Persistent strategy evolution | 🗓 Planned | Experiment budgets, trial history, candidate selection, final checks |
-| Forward paper accounts | 🗓 Planned | Feed ingestion, pinned versions, persistent state, restart recovery |
-| Local monitoring dashboard | 🗓 Planned | Equity, positions, fills, and feed / worker status |
+| Forward paper accounts | ✅ Available | Append-only completed CSV bars, pinned strategy, SQLite state, restart recovery |
+| Local monitoring dashboard | ✅ Available | Multiple accounts, equity, positions, fills, feed / worker health, English / Chinese |
 
 Run `doctor` to inspect the installed version's machine-readable capabilities.
 
@@ -62,9 +62,9 @@ Run `doctor` to inspect the installed version's machine-readable capabilities.
 | 2. Test a strategy | Passed: example strategy schema accepted; unsupported formats remain rejected |
 | 3. Backtest | Passed: synthetic CSV produced metrics, fills, equity, and provenance |
 | 4. Evolve with your AI | Manual exploration verified: this Codex session proposed and evaluated three candidates; none qualified |
-| 5. Run a paper account | **Unavailable:** no paper account command, feed worker, or monitoring website exists yet |
+| 5. Run a paper account | Passed: installed worker, two persistent accounts, local website, JSON monitoring, and restart recovery |
 
-**The full five-step workflow is not supported by this release.** You can install, backtest, and explore parameters with your AI. Forward simulation still needs implementation. See the [verification report](docs/readme-workflow-verification-20260930.md).
+The workflow is available with **host-AI parameter exploration** and an **append-only CSV feed**. The initial [research verification](docs/readme-workflow-verification-20260930.md) records the earlier release; the [paper verification](docs/paper-workflow-verification-20260930.md) covers v0.1.0.
 
 ### 1. Install the skill
 
@@ -77,7 +77,7 @@ skill_dir="${CODEX_HOME:-$HOME/.codex}/skills/quantevo"
 python3 "$skill_dir/scripts/quantevo.py" doctor
 ```
 
-For Claude Code, use `--client claude` and set `skill_dir="$HOME/.claude/skills/quantevo"`. An existing skill is preserved and installation stops; inspect its version with `doctor` before reusing it. A custom destination can be supplied with `--destination /absolute/path/to/skills`.
+For Claude Code, use `--client claude` and set `skill_dir="$HOME/.claude/skills/quantevo"`. An existing skill is preserved by default. To update it, add `--upgrade`; the installer retains a backup in the sibling `skill-backups` directory outside the skills directory. Stop active workers before upgrading: accounts pin runtime hashes, so a changed engine requires its original runtime or a new account. A custom destination can be supplied with `--destination /absolute/path/to/skills`.
 
 Reload skills in your client if needed. In an already running conversation, explicitly ask the AI to read the installed `SKILL.md` using its absolute path; a successful file copy alone does not prove automatic skill discovery.
 
@@ -119,9 +119,51 @@ The **host AI** proposes changes and orchestrates tool calls. QuantEvo does not 
 
 During our check, Codex evaluated three hypotheses on identical windows and found no qualifying improvement. The result and limitations are documented in the verification report. This confirms the manual tool workflow, not strategy effectiveness.
 
-### 5. Forward simulation — not available yet
+### 5. Run persistent paper accounts and the local website
 
-There is no supported command to create or start a paper account in this release. Stop here: a backtest equity curve cannot substitute for forward simulation. Account persistence, feed ingestion, a background worker, and the local website are roadmap items. See the [paper contract](skills/quantevo/references/paper.md).
+A research run may find no improvement. You can still explicitly choose the baseline or a rejected candidate for a workflow trial; creating an account does not declare it a research winner.
+
+Use a **new** demo feed path, and keep the same absolute `paper_home` for every command:
+
+```bash
+paper_home="$PWD/.quantevo"
+mkdir -p "$paper_home"
+python3 scripts/demo_feed.py --output "$paper_home/demo-feed.csv" --updates 0
+
+python3 "$skill_dir/scripts/quantevo.py" paper create \
+  --home "$paper_home" --strategy examples/sma-cross.json \
+  --feed "$paper_home/demo-feed.csv" --name "SMA baseline (synthetic)" \
+  --interval-seconds 1 --source-label "Synthetic workflow demo"
+python3 "$skill_dir/scripts/quantevo.py" paper run --home "$paper_home" --background
+python3 "$skill_dir/scripts/quantevo.py" serve --home "$paper_home" --port 8765 --background
+
+# Append 120 completed synthetic bars over approximately two minutes.
+python3 scripts/demo_feed.py --output "$paper_home/demo-feed.csv" --append --updates 120
+```
+
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The read-only website refreshes every three seconds and shows all accounts, worker health, feed freshness, equity, positions, fees, drawdown, and recent fills. Switch between English and Chinese. Create another account with another name or strategy to compare it on the same feed.
+
+The demo producer stops after 120 updates. The worker continues running and the feed becomes **stale**. This is synthetic workflow data. For actual market observation, supply your own continuously appended, completed OHLCV CSV and set `--interval-seconds` to its expected bar interval. A built-in market API adapter is not included.
+
+Existing bars only warm up the strategy. P&L begins with bars after account creation. Simulated fills use the next supplied bar's open and are recorded when that completed bar arrives; they are modeled fills, not exchange executions. Editing consumed history fails the account rather than silently rewriting its ledger.
+
+Inspect the backend from Codex or Claude Code without opening the website:
+
+```bash
+python3 "$skill_dir/scripts/quantevo.py" paper status --home "$paper_home"
+python3 "$skill_dir/scripts/quantevo.py" paper watch --home "$paper_home" --count 3 --interval 2
+```
+
+Ask your AI: “Read the installed QuantEvo skill, inspect these paper accounts using this absolute home path, and report stale data, stopped workers, errors, positions, and performance.” JSON is also available at `/api/status` and `/api/accounts/<id>`. `watch` streams snapshots; continuous AI inspection requires scheduling in your host tool. The Python worker runs independently of the conversation, but is not an OS startup service.
+
+Stop the worker and website separately; their SQLite accounts remain available for restart:
+
+```bash
+python3 "$skill_dir/scripts/quantevo.py" paper stop-worker --home "$paper_home"
+python3 "$skill_dir/scripts/quantevo.py" serve --home "$paper_home" --stop
+```
+
+Use `paper pause --home "$paper_home" --id <id>` or `paper resume` to control one account. Resume processes any unconsumed bars. See the [paper contract](skills/quantevo/references/paper.md) for the execution and recovery rules.
 
 ### Optional: install the CLI
 
@@ -173,11 +215,12 @@ Review irregular or missing bars before interpreting annualized metrics. The eva
 
 - [x] **Foundation:** portable skill, CSV validation, deterministic backtests, JSON evidence.
 - [ ] **Evolution:** fixed research contracts, persistent trials, budgets, selection, and final evaluation.
-- [ ] **Paper trading:** append-only CSV feeds, then market data adapters and restartable accounts.
-- [ ] **Monitoring:** local dashboard for research results and forward account health.
+- [x] **Paper trading:** append-only CSV feeds, pinned strategies, persistent accounts, restart recovery.
+- [ ] **Market feeds:** built-in market data adapters.
+- [x] **Monitoring:** bilingual local dashboard and JSON inspection of forward account health.
 - [ ] **Distribution:** broader strategy adapters, release documentation, and a published license.
 
-Evolution will use the host AI to propose changes and deterministic tools to evaluate them. A study can end with **no improvement**. Paper workers will run independently of the AI conversation and pin the strategy version they execute.
+Evolution will use the host AI to propose changes and deterministic tools to evaluate them. A study can end with **no improvement**. Paper workers run independently of the AI conversation and pin the strategy version they execute.
 
 ## Documentation
 
@@ -186,7 +229,7 @@ Evolution will use the host AI to propose changes and deterministic tools to eva
 | [Skill entry point](skills/quantevo/SKILL.md) | Shared host-agent workflow |
 | [Backtest contract](skills/quantevo/references/backtest.md) | Implemented format, execution, and metric rules |
 | [Evolution contract](skills/quantevo/references/evolution.md) | Planned research lifecycle and manual exploration boundaries |
-| [Paper contract](skills/quantevo/references/paper.md) | Planned forward simulation behavior |
+| [Paper contract](skills/quantevo/references/paper.md) | Implemented CSV accounts, background processes, dashboard, and monitoring |
 | [Architecture and roadmap](docs/architecture.md) · 中文 | Component responsibilities and implementation sequence |
 | [ai-berkshire reference notes](docs/reference-ai-berkshire.md) · 中文 | Observations behind the workflow/tool separation |
 

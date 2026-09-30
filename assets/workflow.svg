@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-labelledby="title desc">
   <title id="title">QuantEvo Skill research workflow</title>
-  <desc id="desc">Use Codex or Claude Code for research. Backtest is available. Strategy evolution and forward paper trading are planned.</desc>
+  <desc id="desc">Use Codex or Claude Code for research. Backtest and persistent paper monitoring are available. The host AI explores strategy candidates.</desc>
   <rect width="1200" height="330" rx="16" fill="#f4f7fa"/>
   <g font-family="Arial, Helvetica, sans-serif">
     <text x="44" y="53" font-size="13" font-weight="700" letter-spacing="2" fill="#496479">YOUR AI. YOUR STRATEGY. INSPECTABLE EVIDENCE.</text>
@@ -13,10 +13,10 @@
     <text x="64" y="195" font-size="12" font-weight="700" letter-spacing="1" fill="#18715b">01 / AVAILABLE</text>
     <text x="64" y="229" font-size="25" font-weight="700" fill="#152c40">Backtest</text>
     <text x="64" y="260" font-size="15" fill="#496479">CSV data · costs · equity · hashes</text>
-    <text x="452" y="195" font-size="12" font-weight="700" letter-spacing="1" fill="#647687">02 / PLANNED</text>
+    <text x="452" y="195" font-size="12" font-weight="700" letter-spacing="1" fill="#647687">02 / HOST AI</text>
     <text x="452" y="229" font-size="25" font-weight="700" fill="#152c40">Evolve</text>
-    <text x="452" y="260" font-size="15" fill="#496479">Hypotheses · trials · final checks</text>
-    <text x="840" y="195" font-size="12" font-weight="700" letter-spacing="1" fill="#647687">03 / PLANNED</text>
+    <text x="452" y="260" font-size="15" fill="#496479">Hypotheses · evaluate · compare</text>
+    <text x="840" y="195" font-size="12" font-weight="700" letter-spacing="1" fill="#647687">03 / AVAILABLE</text>
     <text x="840" y="229" font-size="25" font-weight="700" fill="#152c40">Paper trade</text>
     <text x="840" y="260" font-size="15" fill="#496479">Persistent accounts · local monitor</text>
   </g>

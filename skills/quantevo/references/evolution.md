@@ -1,7 +1,8 @@
 # Research contract — planned orchestration
 
 This contract guides exploratory work now and the persistent research service
-later. The foundation has only `doctor` and `backtest` commands.
+later. Evolution remains manually orchestrated; paper-account commands are
+implemented separately and do not implement research finalization.
 
 ## Inputs
 

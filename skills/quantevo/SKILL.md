@@ -1,6 +1,6 @@
 ---
 name: quantevo
-description: "Evaluate single-asset SMA strategies on local OHLCV CSV data and organize reproducible strategy research. Use for strategy backtests, optimization experiments, and planning forward paper simulations."
+description: "Backtest single-asset SMA strategies, organize host-AI parameter research, and run persistent CSV paper accounts with a local monitoring website and JSON status tools."
 ---
 
 # QuantEvo
@@ -19,10 +19,10 @@ working directory is the project or a particular home directory.
 python3 "$skill_dir/scripts/quantevo.py" doctor
 ```
 
-Read the returned capability status. This foundation implements CSV backtests
-for JSON `sma_cross` strategies only. Persistent evolution orchestration,
-final-evaluation commands, a forward worker and a website are planned. State
-this boundary if the user's request needs them; do not invent executable commands.
+Read the returned capability status. The runtime supports JSON `sma_cross`
+backtests, persistent CSV paper accounts, a background worker and a loopback
+monitoring website. Persistent evolution orchestration, final-evaluation
+commands and built-in market API feeds are planned. Do not invent commands.
 
 ## Backtest
 
@@ -54,13 +54,36 @@ holdouts, automatic promotion or a completed evolution service.
 If the user wants production orchestration, use the research contract to
 specify the missing implementation before making claims about its results.
 
-## Forward simulation
+## Forward simulation and monitoring
 
-Read [the forward simulation contract](references/paper.md) when requested.
-The foundation cannot start a forward account yet. A historical equity curve
-must be described as a backtest. Plan the worker and data adapter, or implement
-them when requested. Simulated account execution stays independent of the host
-AI conversation, with a pinned strategy version and restartable state.
+Read [the paper contract](references/paper.md). Confirm an absolute data-home
+path, strategy version, feed path, expected bar interval and source label.
+A user may deliberately paper-test the baseline or a rejected candidate;
+record that choice without labeling it as a promoted research winner.
+
+Create an account with `paper create`, run `paper run --background`, and open
+`serve --background`. Use the same explicit `--home` for every command.
+The CSV producer must append completed bars. A worker alone does not acquire
+market data. Never treat synthetic demo feeds as real market observations.
+
+Check `paper status` (or `/api/status`) for worker health, source freshness,
+errors, positions and equity. Read details with `--id`. For a bounded inspection,
+use `paper watch --count 3 --interval 2`; `--count 0` streams until interrupted.
+A watch process is a data stream, not autonomous model execution. Automatic
+future AI inspections require the user's host scheduling features.
+
+History is warmup only; new observations start after account creation. Pins
+include the strategy and runtime hashes. Do not silently replace the version,
+edit consumed history, reset an account, or resume one that failed a history
+integrity check. Report stale feeds and missing heartbeats even if equity is
+unchanged. The bar execution model records modeled next-open fills after CSV
+delivery; it is not an exchange execution report.
+
+Use `paper pause` / `paper resume` for a specific account. Pause halts processing;
+resume catches up on unconsumed rows and does not reset cash. Stop the worker
+with `paper stop-worker`; stop the website with `serve --stop`. The processes
+are independent. Preserve running processes unless the user requests stopping
+or they are explicitly disposable validation services.
 
 ## Deliver
 

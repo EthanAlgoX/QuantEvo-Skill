@@ -1,4 +1,4 @@
 interface:
   display_name: "QuantEvo"
-  short_description: "Backtest strategies and organize reproducible local research"
-  default_prompt: "Use $quantevo to evaluate my strategy and plan an evidence-based optimization."
+  short_description: "Backtest strategies, run paper accounts, and monitor locally"
+  default_prompt: "Use $quantevo to evaluate my strategy, explore candidates with evidence, and run or inspect local paper accounts."

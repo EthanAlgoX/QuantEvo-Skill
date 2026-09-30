@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantevo-skill"
-version = "0.0.1"
+version = "0.1.0"
 description = "Local strategy research tools and a portable agent skill"
 requires-python = ">=3.9"
 dependencies = []
@@ -18,3 +18,6 @@ package-dir = {"" = "skills/quantevo/scripts"}
 [tool.setuptools.packages.find]
 where = ["skills/quantevo/scripts"]
 include = ["quantevo_runtime*"]
+
+[tool.setuptools.package-data]
+quantevo_runtime = ["dashboard.html"]

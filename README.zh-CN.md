@@ -10,19 +10,19 @@
 
 ![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square)
 ![Codex and Claude Code](https://img.shields.io/badge/Works_with-Codex_%26_Claude_Code-24292F?style=flat-square)
-![Foundation v0.0.1](https://img.shields.io/badge/Stage-Foundation_v0.0.1-D97706?style=flat-square)
+![Paper ready v0.1.0](https://img.shields.io/badge/Release-v0.1.0-18715B?style=flat-square)
 
 [快速开始](#快速开始) · [功能状态](#功能状态) · [路线图](#路线图) · [文档导航](#文档导航)
 
 </div>
 
-![QuantEvo 工作流：回测已可用，自进化与前向模拟正在规划中。](assets/workflow.svg)
+![QuantEvo 工作流：回测、AI 辅助研究、持久化模拟与本地监控。](assets/workflow.svg)
 
 QuantEvo Skill 是面向 **Codex 和 Claude Code** 的本地策略研究技能。沿用你已有的 AI 配置，理解策略、执行确定性的评测，并提出可检验的优化假设。QuantEvo 内部无需再配置一套 LLM API。
 
 项目目标是打通可复现回测、策略自进化和持续模拟账户，并通过本地网站查看运行状态。
 
-> **当前版本：** 已支持本地 CSV 上的单标的 SMA 交叉策略回测。持久化自进化、前向模拟和监控网站尚在规划中。基础版本不发送真实订单。
+> **v0.1.0：** 支持单标的 SMA 回测、宿主 AI 参数探索、持久化 CSV 模拟账户及双语本地监控网站。不需要额外配置 LLM API 或 Node.js，不发送真实订单。
 
 ## 为什么使用 QuantEvo？
 
@@ -47,8 +47,8 @@ QuantEvo Skill 是面向 **Codex 和 Claude Code** 的本地策略研究技能�
 | 成本与评测证据 | ✅ 可用 | 手续费、滑点、夏普率、回撤、成交、净值及输入哈希 |
 | AI 辅助参数探索 | 🧪 手动编排 | 宿主 AI 提出修改；用户准备数据分段并分别保存结果 |
 | 持久化策略自进化 | 🗓 规划中 | 实验预算、试验历史、候选选择与最终检查 |
-| 前向模拟账户 | 🗓 规划中 | 行情接入、固定版本、持久化与重启恢复 |
-| 本地监控网站 | 🗓 规划中 | 净值、持仓、成交及行情与后台进程状态 |
+| 前向模拟账户 | ✅ 可用 | 追加已收盘 CSV、固定策略、SQLite 持久化、重启恢复 |
+| 本地监控网站 | ✅ 可用 | 多账户、净值、持仓、成交、行情与后台健康、中英文切换 |
 
 运行 `doctor` 可查看已安装版本的机器可读能力清单。
 
@@ -62,9 +62,9 @@ QuantEvo Skill 是面向 **Codex 和 Claude Code** 的本地策略研究技能�
 | 2. 测试策略 | 通过：示例通过策略格式校验；不支持的格式仍会被拒绝 |
 | 3. 回测 | 通过：合成 CSV 生成了指标、成交、净值和来源指纹 |
 | 4. 用自己的 AI 自进化 | 已验证手动探索：当前 Codex 提出并评测了三个候选，均未通过筛选 |
-| 5. 模拟运行 | **暂不可用：** 尚无模拟账户命令、行情后台或监控网站 |
+| 5. 模拟运行 | 通过：安装后的后台、两个持久化账户、本地网站、JSON 检测和重启恢复 |
 
-**当前版本无法完成完整的五步流程。** 可以安装、回测，并使用自己的 AI 探索参数；前向模拟仍需实现。详见[流程验证报告](docs/readme-workflow-verification-20260930.md)。
+目前可以完成使用**宿主 AI 探索参数**、通过**追加 CSV 行情**模拟运行的流程。[初始研究验证](docs/readme-workflow-verification-20260930.md)记录旧版本；[模拟运行验证](docs/paper-workflow-verification-20260930.md)覆盖 v0.1.0。
 
 ### 1. 安装 skill
 
@@ -77,7 +77,7 @@ skill_dir="${CODEX_HOME:-$HOME/.codex}/skills/quantevo"
 python3 "$skill_dir/scripts/quantevo.py" doctor
 ```
 
-Claude Code 用户改用 `--client claude`，并设置 `skill_dir="$HOME/.claude/skills/quantevo"`。已有同名技能会保留并停止安装；复用前请用 `doctor` 检查版本。可用 `--destination /absolute/path/to/skills` 自定义技能父目录。
+Claude Code 用户改用 `--client claude`，并设置 `skill_dir="$HOME/.claude/skills/quantevo"`。已有同名技能默认保留。更新时加 `--upgrade`，安装器会在技能目录之外的同级 `skill-backups` 目录保留备份。升级前先停止后台：账户固定运行代码哈希，引擎发生变化时需使用原运行版本或新建账户。可用 `--destination /absolute/path/to/skills` 自定义技能父目录。
 
 必要时在客户端重新加载技能。对已经打开的对话，可以明确要求 AI 通过绝对路径读取安装后的 `SKILL.md`；仅复制文件成功，不代表已经验证客户端能自动发现技能。
 
@@ -119,9 +119,51 @@ python3 "$skill_dir/scripts/quantevo.py" backtest \
 
 本次核查中，Codex 对相同区间评测了三个假设，没有找到合格改进；结果与限制已记入验证报告。这验证的是手动研究工具流程，不代表策略有效性。
 
-### 5. 前向模拟——当前不可用
+### 5. 启动持久化模拟账户和本地网站
 
-当前版本没有可用的模拟账户创建或启动命令，流程在这里停止。历史回测净值不能替代前向模拟。账户持久化、行情接入、后台进程和本地网站仍是路线图中的功能，详见[模拟运行合同](skills/quantevo/references/paper.md)。
+研究没有找到改进时，也可以明确选择基线或被淘汰的候选进行流程测试。创建模拟账户不表示它通过了研究筛选。
+
+示例行情文件需使用**新路径**，所有命令保持相同的绝对 `paper_home`：
+
+```bash
+paper_home="$PWD/.quantevo"
+mkdir -p "$paper_home"
+python3 scripts/demo_feed.py --output "$paper_home/demo-feed.csv" --updates 0
+
+python3 "$skill_dir/scripts/quantevo.py" paper create \
+  --home "$paper_home" --strategy examples/sma-cross.json \
+  --feed "$paper_home/demo-feed.csv" --name "SMA baseline (synthetic)" \
+  --interval-seconds 1 --source-label "Synthetic workflow demo"
+python3 "$skill_dir/scripts/quantevo.py" paper run --home "$paper_home" --background
+python3 "$skill_dir/scripts/quantevo.py" serve --home "$paper_home" --port 8765 --background
+
+# 约两分钟内追加 120 根已收盘合成 K 线。
+python3 scripts/demo_feed.py --output "$paper_home/demo-feed.csv" --append --updates 120
+```
+
+打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。只读网站每三秒刷新，展示所有策略账户、后台健康、数据新鲜度、净值、仓位、费用、回撤和最近成交，支持中英文切换。使用其他名称或策略再创建账户，可以共用行情进行对比。
+
+合成行情生成器追加 120 次后退出。后台继续运行，行情会显示**过期**。这只是流程测试数据；观察真实市场时，需要自行持续追加已收盘 OHLCV CSV，并把 `--interval-seconds` 设置为预计 K 线间隔。首版不含内置市场 API 适配器。
+
+建账户时的历史数据只预热，不计历史盈亏；账户创建之后的新 K 线才开始记账。模拟成交按下一根输入 K 线的开盘价建模，在收到其完整已收盘数据时记录，不是交易所成交。修改已消费的历史会使账户失败，不能悄悄重写账本。
+
+无需打开网站，也可以让 Codex 或 Claude Code 检测后台：
+
+```bash
+python3 "$skill_dir/scripts/quantevo.py" paper status --home "$paper_home"
+python3 "$skill_dir/scripts/quantevo.py" paper watch --home "$paper_home" --count 3 --interval 2
+```
+
+向 AI 提出：“读取安装后的 QuantEvo skill，通过这个绝对 home 路径检查模拟账户，报告行情过期、后台停止、错误、持仓与收益情况。”网站也提供 `/api/status` 和 `/api/accounts/<id>` JSON。`watch` 只输出状态快照；持续由 AI 检查需要宿主工具的调度。Python 后台独立于对话持续运行，首版不提供开机自启动服务。
+
+后台和网站分别停止，SQLite 账户会保留供重启恢复：
+
+```bash
+python3 "$skill_dir/scripts/quantevo.py" paper stop-worker --home "$paper_home"
+python3 "$skill_dir/scripts/quantevo.py" serve --home "$paper_home" --stop
+```
+
+单账户可用 `paper pause --home "$paper_home" --id <id>` 和 `paper resume` 控制；恢复后处理未消费 K 线。成交与恢复规则详见[模拟运行合同](skills/quantevo/references/paper.md)。
 
 ### 可选：安装命令行工具
 
@@ -173,11 +215,12 @@ timestamp,open,high,low,close,volume
 
 - [x] **基础工具：** 可移植 skill、CSV 校验、确定性回测与 JSON 证据。
 - [ ] **自进化研究：** 固定研究合同、持久化实验、预算、候选选择与最终评测。
-- [ ] **模拟运行：** 先接追加式 CSV，再接市场行情源与可恢复账户。
-- [ ] **本地监控：** 展示研究结果、前向账户表现与运行健康状态。
+- [x] **模拟运行：** 追加式 CSV、固定策略、持久化账户与重启恢复。
+- [ ] **市场行情：** 内置市场数据适配器。
+- [x] **本地监控：** 双语网站与 JSON 检测，展示前向账户及运行健康。
 - [ ] **发行完善：** 扩展策略接口、完善发行文档与正式许可证。
 
-自进化由宿主 AI 提出修改，程序负责评测；**没有找到改进**也应是有效结果。模拟后台进程将独立于 AI 对话运行，并固定所执行的策略版本。
+自进化由宿主 AI 提出修改，程序负责评测；**没有找到改进**也应是有效结果。模拟后台进程独立于 AI 对话运行，并固定所执行的策略版本。
 
 ## 文档导航
 
@@ -186,7 +229,7 @@ timestamp,open,high,low,close,volume
 | [技能入口](skills/quantevo/SKILL.md) | 两个客户端共用的研究流程 |
 | [回测合同](skills/quantevo/references/backtest.md) | 已实现的格式、成交与指标规则 |
 | [自进化合同](skills/quantevo/references/evolution.md) | 规划中的研究生命周期及手动探索边界 |
-| [模拟运行合同](skills/quantevo/references/paper.md) | 规划中的前向模拟行为 |
+| [模拟运行合同](skills/quantevo/references/paper.md) | 已实现的 CSV 账户、后台、网站与检测规则 |
 | [架构与实施路线](docs/architecture.md) | 模块职责及实施顺序 |
 | [ai-berkshire 参考分析](docs/reference-ai-berkshire.md) | 工作流与工具分工的参考依据 |
 

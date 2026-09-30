@@ -7,7 +7,17 @@ import math
 import statistics
 from datetime import datetime, timezone
 
-ENGINE_VERSION = "sma-long-only-v0.0.1"
+ENGINE_VERSION = "sma-long-only-v0.1.0"
+
+
+def crossover(closes, spec):
+    """Signal from two completed SMA observations, shared with paper accounts."""
+    if len(closes) < spec["slow"] + 1:
+        return None
+    def above(values):
+        return math.fsum(values[-spec["fast"]:])/spec["fast"] > math.fsum(values[-spec["slow"]:])/spec["slow"]
+    previous, current = above(closes[:-1]), above(closes)
+    return "BUY" if current and not previous else "SELL" if previous and not current else None
 
 
 def digest(raw):
@@ -80,24 +90,15 @@ def backtest(bars, spec, initial_cash=10000, fee_bps=10, slippage_bps=5, periods
     if len(bars) < spec["slow"] + 2:
         raise ValueError("Need at least slow + 2 bars")
     closes = [bar["close"] for bar in bars]
-    means = {}
-    for key in ("fast", "slow"):
-        window, total, values = spec[key], 0.0, []
-        for i, close in enumerate(closes):
-            total += close
-            if i >= window:
-                total -= closes[i-window]
-            values.append(total/window if i >= window-1 else None)
-        means[key] = values
     cash, qty, previous, peak = initial_cash, 0.0, initial_cash, initial_cash
     returns, curve, fills = [], [], []
     fees = 0.0
     max_drawdown = 0.0
     for i, bar in enumerate(bars):
         if i >= spec["slow"] + 1:
-            was_above = means["fast"][i-2] > means["slow"][i-2]
-            is_above = means["fast"][i-1] > means["slow"][i-1]
-            side = "BUY" if is_above and not was_above and qty == 0 else "SELL" if was_above and not is_above and qty > 0 else None
+            side = crossover(closes[max(0, i-spec["slow"]-1):i], spec)
+            if (side == "BUY" and qty > 0) or (side == "SELL" and qty == 0):
+                side = None
             if side:
                 fill_price = bar["open"] * (1 + slip if side == "BUY" else 1 - slip)
                 fill_qty = cash * spec["position_weight"] / (fill_price * (1+fee)) if side == "BUY" else qty
